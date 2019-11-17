@@ -76,7 +76,8 @@ public class MainActivity extends AppCompatActivity {
     private Handler scan_handler_;
 
     private BluetoothGatt ble_gatt_;
-    //static Map<DeviceObj, BluetoothGatt> bleobj = new HashMap<>();
+    static Map<DeviceObj, BluetoothGatt> bleobj = new HashMap<>();
+    static Map<String, BluetoothGatt> connectedDeviceList = new HashMap<>();
 
 
     @Override
@@ -100,6 +101,12 @@ public class MainActivity extends AppCompatActivity {
 
         logview = findViewById(R.id.logview);
         console = findViewById(R.id.console);
+        new Thread() {
+            @Override
+            public void run() {
+                startScan();
+            }
+        }.start();
 
 
         /* BLE Manager */
@@ -109,22 +116,24 @@ public class MainActivity extends AppCompatActivity {
         ble_adapter_ = ble_manager.getAdapter();
 
 
-
-
-
-
-        //onclick listener
+       /* //onclick listener
         btn_scan_.setOnClickListener((v) -> {
             startScan(v);
+        });*/
+        btn_scan_.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startScan();
+            }
         });
 
         btn_send_.setOnClickListener((v) -> {
 
 
-            sendData(v, console.getText().toString());
+            if (!console.getText().toString().isEmpty()) {
+                sendData(v, console.getText().toString());
+            }
         });
-
-
 
 
     }
@@ -223,7 +232,7 @@ public class MainActivity extends AppCompatActivity {
     /*
     Start BLE Scan
      */
-    private void startScan(View v) {
+    private void startScan() {
         tv_status_.setText("Scanning...");
         //check ble adapter and ble enabled
         if (ble_adapter_ == null || !ble_adapter_.isEnabled()) {
@@ -273,8 +282,8 @@ public class MainActivity extends AppCompatActivity {
         ble_scanner_.startScan(null, settings, scan_cb_);
         is_scanning_ = true;
 
-        scan_handler_ = new Handler();
-        scan_handler_.postDelayed(this::stopScan, SCAN_PERIOD);
+        //scan_handler_ = new Handler();
+        //scan_handler_.postDelayed(this::stopScan, SCAN_PERIOD);
     } //startScan
 
     /*
@@ -349,6 +358,9 @@ public class MainActivity extends AppCompatActivity {
             if (_new_state == BluetoothProfile.STATE_CONNECTED) {
                 // update the connection status message
                 // set the connection flag
+                //connected 되었을 경우에 -> connectedDeviceList에 보냄 <MAC주소, _gatt>
+                connectedDeviceList.put(_gatt.getDevice().getAddress(), _gatt);
+
                 connected_ = true;
                 Log.d(TAG, "Connected to the GATT server");
                 _gatt.discoverServices();
@@ -446,7 +458,6 @@ public class MainActivity extends AppCompatActivity {
          */
         BLEScanCallback(Map<String, BluetoothDevice> _scan_results) {
             cb_scan_results_ = _scan_results;
-
         }
 
         @Override
@@ -475,11 +486,37 @@ public class MainActivity extends AppCompatActivity {
             BluetoothDevice device = _result.getDevice();
             // get scanned device MAC address
             String device_address = device.getAddress();
+
+
+
             // add the device to the result list
+
+
+
+
+
+            /*
+
+
+            HashMap<MAC, callname>으로 이루어진 데이터셋에 해당 MAC이 있는지 확인.
+            scan 결과에서 getAddress HasHMap.containKey와 비교
+            no 라면 등록. connectDeviceList를 유지하고,
+            connectDevice에서는
+            coonectedDeviceList HashMap<MAC, BluetoothGatt>에 추가하고 connect로 가버렷.
+             */
+
+            // 연결된 디바이스에 장비가 없을 경우 connect로 보냄.
+            if(!connectedDeviceList.containsKey(_result.getDevice().getAddress())) {
+                connectDevice(_result.getDevice());
+
+            }
+
+            /*
             if (cb_scan_results_.containsValue(_result.getDevice()) == false) {
                 cb_scan_results_.put(device_address, device);
                 Toast.makeText(getApplicationContext(), "scan result : " + device, Toast.LENGTH_SHORT).show();
             }
+            */
             // log
             Log.d(TAG, "scan results device: " + device);
             tv_status_.setText("add scanned device: " + device_address);
