@@ -35,7 +35,6 @@
                 android:text="&lt;Status>" />
 
 
-
         </LinearLayout>
 
         <LinearLayout
@@ -96,18 +95,47 @@
             android:text="Show Paired Devices"
             tools:layout_editor_absoluteX="108dp"
             tools:layout_editor_absoluteY="179dp" />
+
         <EditText
             android:id="@+id/console"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            />
+            android:layout_height="wrap_content" />
 
         <TextView
             android:id="@+id/logview"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            />
+            android:layout_height="match_parent" />
 
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_alignParentBottom="true"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnCall1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Button1"
+            android:textSize="20dp" />
+
+        <Button
+            android:id="@+id/btnCall2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Button2"
+            android:textSize="20dp" />
+
+        <Button
+            android:id="@+id/btnCall3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Button3"
+            android:textSize="20dp" />
     </LinearLayout>
 
 </RelativeLayout>

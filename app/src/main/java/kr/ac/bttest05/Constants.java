@@ -1,5 +1,8 @@
 package kr.ac.bttest05;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 public class Constants {
@@ -7,6 +10,9 @@ public class Constants {
  UUID && MAC
   */
     public final static String MAC_ADDR = "84:0D:8E:07:5A:CA";
+
+    //Map<Mac, DeviceName>
+    public final static Map<String, String> DeviceList = new HashMap<>();
     // Tag name for Log message
     public final static String TAG = "Central";
 
