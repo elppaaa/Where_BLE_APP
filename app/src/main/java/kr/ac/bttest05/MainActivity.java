@@ -105,6 +105,7 @@ public class MainActivity extends AppCompatActivity {
         ble_manager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         //set ble adapter
         ble_adapter_ = ble_manager.getAdapter();
+        DeviceList.put(MAC_ADDR1, "봉숙");
 
         new Thread(()->{
             startScan();
@@ -115,7 +116,9 @@ public class MainActivity extends AppCompatActivity {
                 SystemClock.sleep(60000);
                 for(BluetoothGatt _gatt :connectedDeviceList.values()){
                     if(ble_manager.getConnectionState(_gatt.getDevice(), BluetoothProfile.GATT) == BluetoothProfile.STATE_DISCONNECTED) {
+                        logview.append("remove : " + _gatt.getDevice().getAddress() + "\n");
                         connectedDeviceList.remove(_gatt.getDevice().getAddress());
+
                     }
                 }
             }
@@ -311,7 +314,8 @@ public class MainActivity extends AppCompatActivity {
      */
     private void connectDevice(BluetoothDevice _device) {
         //update the status
-        tv_status_.setText("Connecting to " + _device.getAddress());
+        //tv_status_.setText("Connecting to " + _device.getAddress());
+        logview.append(_device.getAddress()+ "  connect시도중 \n" );
         GattClientCallback gatt_client_cb = new GattClientCallback();
         ble_gatt_ = _device.connectGatt(this, true, gatt_client_cb);
     }
@@ -334,6 +338,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             if (_new_state == BluetoothProfile.STATE_CONNECTED) {
+                logview.append(_gatt.getDevice().getAddress() + "   연결됨 \n");
                 connected_ = true;
                 Log.d(TAG, "Connected to the GATT server");
                 _gatt.discoverServices();
@@ -456,6 +461,7 @@ public class MainActivity extends AppCompatActivity {
         Add scan result
          */
         private void addScanResult(ScanResult _result) {
+            logview.append("Scan Callback 시작\n");
             // get scanned device
             BluetoothDevice device = _result.getDevice();
             // get scanned device MAC address
