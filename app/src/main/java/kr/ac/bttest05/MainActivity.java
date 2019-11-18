@@ -1,8 +1,9 @@
 package kr.ac.bttest05;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
@@ -22,6 +23,10 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.speech.RecognitionListener;
+import android.speech.RecognizerIntent;
+import android.speech.SpeechRecognizer;
+import android.speech.tts.TextToSpeech;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.Menu;
@@ -34,6 +39,7 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import android.widget.Toast;
@@ -61,9 +67,9 @@ public class MainActivity extends AppCompatActivity {
 
     private Button btnCall1, btnCall2, btnCall3;
 
-
-
-
+    // 음성 인식 / 음성 출력 Obj
+    TextToSpeech tts;
+    private SpeechRecognizer stt;
 
 
     // used to identify adding bluetooth names
@@ -91,9 +97,10 @@ public class MainActivity extends AppCompatActivity {
     static String toggle_A = "A";
 
     Menu menu;
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.actionbar_actions,menu);
+        getMenuInflater().inflate(R.menu.actionbar_actions, menu);
         return true;
     }
 
@@ -108,7 +115,6 @@ public class MainActivity extends AppCompatActivity {
                 return super.onOptionsItemSelected(item);
         }
     }
-
 
 
 
@@ -147,6 +153,23 @@ public class MainActivity extends AppCompatActivity {
 
         DeviceList.put(MAC_ADDR1, "봉숙");
 
+
+        tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit ( int i){
+                tts.setLanguage(Locale.KOREAN);
+            }
+        });
+
+        //RECORD_AUDIO 권한 확인.
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 5);
+            Toast.makeText(getApplicationContext(), "권한을 수락해주세요", Toast.LENGTH_LONG);
+        }
+
+
+
+
         new Thread(() -> {
             startScan();
         }).start();
@@ -155,7 +178,7 @@ public class MainActivity extends AppCompatActivity {
             while (true) {
 
                 if (connectedDeviceList.size() < 3) {
-                    if(connectedDeviceList.size() == 0){
+                    if (connectedDeviceList.size() == 0) {
                     }
                     startScan();
                 } else {
@@ -190,14 +213,13 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 sendData(connectedDeviceList.get(MAC_ADDR1), toggle_A);
 
-                if(toggle_A == "A") {
+                if (toggle_A == "A") {
                     toggle_A = "B";
                 } else {
                     toggle_A = "A";
                 }
             }
         });
-
 
 
     }
@@ -580,6 +602,70 @@ public class MainActivity extends AppCompatActivity {
             finish();
         }
     } //onResume() -> BLE not support -> finish()
+
+
+    /*
+    음성 인식 메소드 구현.
+     */
+    public void inputVoice(SpeechRecognizer _stt, String _inputText) {
+        try{
+            Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+            intent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, getPackageName());
+            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ko-KR");
+            _stt = SpeechRecognizer.createSpeechRecognizer(this);
+            _stt.setRecognitionListener(new RecognitionListener() {
+                @Override
+                public void onReadyForSpeech(Bundle params) {
+                    //음성 입력 시작.
+                }
+
+                @Override
+                public void onBeginningOfSpeech() {
+
+                }
+
+                @Override
+                public void onRmsChanged(float rmsdB) {
+
+                }
+
+                @Override
+                public void onBufferReceived(byte[] buffer) {
+
+                }
+
+                @Override
+                public void onEndOfSpeech() {
+                    //음성 입력
+                }
+
+                @Override
+                public void onError(int error) {
+                    //오류 발생
+                }
+
+                @Override
+                public void onResults(Bundle results) {
+                    //결과를 받아주는 메소드
+                }
+
+                @Override
+                public void onPartialResults(Bundle partialResults) {
+
+                }
+
+                @Override
+                public void onEvent(int eventType, Bundle params) {
+
+                }
+            });
+
+            stt.startListening(intent);
+        }catch (Exception e) {
+            Toast.makeText(getApplicationContext(), e.toString(), Toast.LENGTH_LONG);
+        }
+    }       //InputVoice
+
 
 
 }
