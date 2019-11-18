@@ -36,6 +36,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -57,6 +58,8 @@ public class MainActivity extends AppCompatActivity {
 
     private Button btnCall1, btnCall2, btnCall3;
 
+    private ImageButton btnVoice;
+
     // 음성 인식 / 음성 출력 Obj
     private TextToSpeech tts;
     private SpeechRecognizer stt;
@@ -69,8 +72,6 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothAdapter ble_adapter_;
     // flag for scanning
     private boolean is_scanning_ = false;
-    // flag for connection
-    //private boolean connected_ = false;
     // scan results
     private Map<String, BluetoothDevice> scan_results_;
     // scan callback
@@ -90,6 +91,12 @@ public class MainActivity extends AppCompatActivity {
     static String toggle_3 = "A";
 
     Menu menu;
+
+    /*
+    호출중인지를 확인할 변수.
+    btnVoice를 눌렀을때 is_calling == true 이면 연결된 모든 디바이스에 "B" send
+     */
+    static boolean is_calling_ = false;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -119,6 +126,7 @@ public class MainActivity extends AppCompatActivity {
 
         // scan button
         btn_scan_ = findViewById(R.id.btn_scan);
+        btnVoice = findViewById(R.id.btnVoice);
 
 
         logview = findViewById(R.id.logview);
@@ -135,9 +143,9 @@ public class MainActivity extends AppCompatActivity {
         ble_adapter_ = ble_manager.getAdapter();
         ble_scanner_ = ble_adapter_.getBluetoothLeScanner();
 
-        DeviceList.put(MAC_ADDR1, "봉숙");
-        DeviceList.put(MAC_ADDR2, "숙자");
-        DeviceList.put(MAC_ADDR3, "영자");
+        DeviceList.put("봉숙", MAC_ADDR1);
+        DeviceList.put("숙자", MAC_ADDR2);
+        DeviceList.put("영자", MAC_ADDR3);
 
 
         tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
@@ -147,6 +155,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+
         //RECORD_AUDIO 권한 확인.
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 5);
@@ -154,35 +163,21 @@ public class MainActivity extends AppCompatActivity {
         }
 
 
-
-        /*
-        new Thread(() -> {
-            SystemClock.sleep(3000);
-            while (true) {
-
-                if (connectedDeviceList.size() < 3 && is_scanning_ == false) {
-                    SystemClock.sleep(3000);
-                    startScan();
-                } else {
-                    stopScan();
-                }
-
-
-
-                for (BluetoothGatt _gatt : connectedDeviceList.values()) {
-                    SystemClock.sleep(1000);
-                    if (ble_manager.getConnectionState(_gatt.getDevice(), BluetoothProfile.GATT) == BluetoothProfile.STATE_DISCONNECTED) {
-                        connectedDeviceList.remove(_gatt.getDevice().getAddress());
-
+        btnVoice.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(is_calling_) {
+                    for(BluetoothGatt _dev :connectedDeviceList.values()){
+                        sendData(_dev, "B");
+                        is_calling_ = false;
                     }
+                } else {
+                    inputVoice();
                 }
-
-            SystemClock.sleep(3000);
 
             }
-        }).start();
+        });
 
-         */
 
 
         btn_scan_.setOnClickListener(new View.OnClickListener() {
@@ -195,13 +190,13 @@ public class MainActivity extends AppCompatActivity {
         btnCall1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                    sendData(connectedDeviceList.get(MAC_ADDR1), toggle_1);
+                sendData(connectedDeviceList.get(MAC_ADDR1), toggle_1);
 
-                    if (toggle_1 == "A") {
-                        toggle_1 = "B";
-                    } else {
-                        toggle_1 = "A";
-                    }
+                if (toggle_1 == "A") {
+                    toggle_1 = "B";
+                } else {
+                    toggle_1 = "A";
+                }
             }
 
 
@@ -209,30 +204,30 @@ public class MainActivity extends AppCompatActivity {
         btnCall2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                    sendData(connectedDeviceList.get(MAC_ADDR2), toggle_2);
-                    if (toggle_2 == "A") {
-                        toggle_2 = "B";
-                    } else {
-                        toggle_2 = "A";
-                    }
+                sendData(connectedDeviceList.get(MAC_ADDR2), toggle_2);
+                if (toggle_2 == "A") {
+                    toggle_2 = "B";
+                } else {
+                    toggle_2 = "A";
+                }
             }
         });
 
         btnCall3.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                    sendData(connectedDeviceList.get(MAC_ADDR3), toggle_3);
+                sendData(connectedDeviceList.get(MAC_ADDR3), toggle_3);
 
-                    if (toggle_3 == "A") {
-                        toggle_3 = "B";
-                    } else {
-                        toggle_3 = "A";
-                    }
+                if (toggle_3 == "A") {
+                    toggle_3 = "B";
+                } else {
+                    toggle_3 = "A";
+                }
             }
         });
 
 
-        SystemClock.sleep(2000);
+        SystemClock.sleep(1000);
         startScan();
 
 
@@ -269,7 +264,7 @@ public class MainActivity extends AppCompatActivity {
             BluetoothGattCharacteristic btt = bts.getService(SERVICE_UUID).getCharacteristic(RX_CHAR_UUID);
             startStimulation(bts, btt, _str);
         } catch (RuntimeException e) {
-            toast("Not connected\n");
+            toast("Not connected");
             routine();
         }
 
@@ -362,12 +357,12 @@ public class MainActivity extends AppCompatActivity {
             //scanComplete();
         }
         */
-            is_scanning_ = false;
-            ble_scanner_.stopScan(scan_cb_);
-            //reset flags
-            scan_cb_ = null;
-            //scan_handler_ = null;
-            //update the status
+        is_scanning_ = false;
+        ble_scanner_.stopScan(scan_cb_);
+        //reset flags
+        scan_cb_ = null;
+        //scan_handler_ = null;
+        //update the status
     } //stopScan()
 
     /*
@@ -541,7 +536,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onScanResult(int _callback_type, ScanResult _result) {
-            if (DeviceList.containsKey(_result.getDevice().getAddress())) {
+            if (DeviceList.containsValue(_result.getDevice().getAddress())) {
                 addScanResult(_result);
             }
 
@@ -550,7 +545,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onBatchScanResults(List<ScanResult> _results) {
             for (ScanResult result : _results) {
-                if (DeviceList.containsKey(result.getDevice().getAddress())) {
+                if (DeviceList.containsValue(result.getDevice().getAddress())) {
                     addScanResult(result);
                 }
             }
@@ -623,16 +618,17 @@ public class MainActivity extends AppCompatActivity {
     /*
     음성 인식 메소드 구현.
      */
-    public void inputVoice(SpeechRecognizer _stt, String _inputText) {
+    public void inputVoice() {
         try {
             Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
             intent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, getPackageName());
             intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ko-KR");
-            _stt = SpeechRecognizer.createSpeechRecognizer(this);
-            _stt.setRecognitionListener(new RecognitionListener() {
+            stt = SpeechRecognizer.createSpeechRecognizer(this);
+            stt.setRecognitionListener(new RecognitionListener() {
                 @Override
                 public void onReadyForSpeech(Bundle params) {
                     //음성 입력 시작.
+                    toast("음성 인식 중");
                 }
 
                 @Override
@@ -663,6 +659,10 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onResults(Bundle results) {
                     //결과를 받아주는 메소드
+                    // 결과를 siri메소드로 보냄
+                    String _t = ((ArrayList<String>) results.get(SpeechRecognizer.RESULTS_RECOGNITION)).get(0);
+                    siri(_t);
+                    logview.append("User : " +_t+ "\n");
                 }
 
                 @Override
@@ -678,7 +678,7 @@ public class MainActivity extends AppCompatActivity {
 
             stt.startListening(intent);
         } catch (Exception e) {
-            Toast.makeText(getApplicationContext(), e.toString(), Toast.LENGTH_LONG);
+            toast(e.toString());
         }
     }       //InputVoice
 
@@ -692,7 +692,7 @@ public class MainActivity extends AppCompatActivity {
 
         for (BluetoothGatt _gatt : connectedDeviceList.values()) {
             if (ble_manager.getConnectionState(_gatt.getDevice(), BluetoothProfile.GATT) == BluetoothProfile.STATE_DISCONNECTED) {
-                logview.append("disconnect : " + _gatt.getDevice().getAddress()+ "\n");
+                logview.append("disconnect : " + _gatt.getDevice().getAddress() + "\n");
                 connectedDeviceList.remove(_gatt.getDevice().getAddress());
 
             }
@@ -704,5 +704,22 @@ public class MainActivity extends AppCompatActivity {
         Toast t = Toast.makeText(getApplicationContext(), _str, Toast.LENGTH_SHORT);
         t.show();
     }
+
+    private void siri(String _vtt) {
+        try {
+            for (Map.Entry<String, String> map : DeviceList.entrySet()) {
+                if (_vtt.contains(map.getKey())) {
+                    logview.append(map.getKey() + " 호출\n");
+                    tts.speak("Where에서 " + map.getKey() + "를 찾겠습니다.", TextToSpeech.QUEUE_FLUSH, null);
+                    is_calling_ = true;
+                    sendData(connectedDeviceList.get(map.getValue()), "A");
+                }
+            }
+        } catch (Exception e) {
+            logview.append(e.toString() + "\n");
+            toast(e.toString());
+        }
+    }
+
 
 }

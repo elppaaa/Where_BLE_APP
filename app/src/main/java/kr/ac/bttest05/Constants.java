@@ -13,8 +13,8 @@ public class Constants {
     public final static String MAC_ADDR2 = "84:0D:8E:1B:94:86";
     public final static String MAC_ADDR3 = "84:0D:8E:13:B4:02";
 
-    //Map<Mac, DeviceName>
-    public final static Map<String, String> DeviceList = new HashMap<>();
+    //Map<DeviceName, MAC>
+    public static Map<String, String> DeviceList = new HashMap<>();
     // Tag name for Log message
     public final static String TAG = "Central";
 

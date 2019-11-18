@@ -8,6 +8,9 @@ import android.widget.EditText;
 
 import androidx.annotation.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class DeviceSetting extends Activity {
     private EditText Text1, Text2, Text3;
@@ -48,9 +51,9 @@ public class DeviceSetting extends Activity {
 
     }
 
-    private String[] readName() {
+    public List<String> readName() {
         //장비이름을 가져오기.
-        String[] _deviceList = new String[3];
+        List<String> _deviceList = new ArrayList<>();
         return _deviceList;
     }
 
