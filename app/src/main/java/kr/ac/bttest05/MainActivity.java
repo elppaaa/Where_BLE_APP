@@ -1,5 +1,7 @@
 package kr.ac.bttest05;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.Manifest;
@@ -22,6 +24,8 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -32,7 +36,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import android.os.Handler;
 import android.widget.Toast;
 
 import static kr.ac.bttest05.Constants.*;
@@ -59,6 +62,10 @@ public class MainActivity extends AppCompatActivity {
     private Button btnCall1, btnCall2, btnCall3;
 
 
+
+
+
+
     // used to identify adding bluetooth names
 
     // ble adapter
@@ -79,7 +86,31 @@ public class MainActivity extends AppCompatActivity {
     //private BluetoothGatt ble_gatt_;
     //Map<MAC, BluetoothGatt
     static Map<String, BluetoothGatt> connectedDeviceList = new HashMap<>();
+
+    //Device On/Off toggle
     static String toggle_A = "A";
+
+    Menu menu;
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.actionbar_actions,menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        //Handle presses on the action bar
+        switch (item.getItemId()) {
+            case R.id.action_setting:
+                startActivity(new Intent(MainActivity.this, DeviceSetting.class));
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+
+
 
 
     @Override
@@ -124,6 +155,8 @@ public class MainActivity extends AppCompatActivity {
             while (true) {
 
                 if (connectedDeviceList.size() < 3) {
+                    if(connectedDeviceList.size() == 0){
+                    }
                     startScan();
                 } else {
                     stopScan();
