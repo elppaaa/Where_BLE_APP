@@ -50,20 +50,8 @@ import static kr.ac.bttest05.Constants.*;
 
 public class MainActivity extends AppCompatActivity {
     //// GUI variables
-    // text view for status
-    private TextView tv_status_;
-    // text view for read
-    private TextView tv_read_;
-    // button for start scan
-    private Button btn_scan_;
-    // button for stop connection
-    private Button btn_stop_;
-    // button for send data
-    private Button btn_send_;
-    // button for show paired devices
-    private Button btn_show_;
 
-    private EditText console;
+    private Button btn_scan_;
 
     private TextView logview;
 
@@ -128,22 +116,13 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         //// get instances of gui objects
-        // status textview
-        tv_status_ = findViewById(R.id.tv_status);
-        // read textview
-        tv_read_ = findViewById(R.id.tv_read);
+
         // scan button
         btn_scan_ = findViewById(R.id.btn_scan);
-        // stop button
-        btn_stop_ = findViewById(R.id.btn_stop);
-        // send button
-        btn_send_ = findViewById(R.id.btn_send);
-        // show button
-        btn_show_ = findViewById(R.id.btn_show);
+
 
         logview = findViewById(R.id.logview);
         logview.setMovementMethod(ScrollingMovementMethod.getInstance());
-        console = findViewById(R.id.console);
 
         btnCall1 = findViewById(R.id.btnCall1);
         btnCall2 = findViewById(R.id.btnCall2);
@@ -324,18 +303,15 @@ public class MainActivity extends AppCompatActivity {
     Start BLE Scan
      */
     private void startScan() {
-        tv_status_.setText("Scanning...");
         //check ble adapter and ble enabled
         if (ble_adapter_ == null || !ble_adapter_.isEnabled()) {
             requestEnableBLE(); //BLE 실행 메소드
-            tv_status_.setText("Scanning Failed: ble not enabled");
             return;
         }
 
         //check if location permission
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             requestLocatioonPermission();
-            tv_status_.setText("Scanning Failed: no fine location permission");
             return;
         }
 
@@ -392,7 +368,6 @@ public class MainActivity extends AppCompatActivity {
             scan_cb_ = null;
             //scan_handler_ = null;
             //update the status
-            tv_status_.setText("Scanning Stop");
     } //stopScan()
 
     /*
@@ -401,7 +376,6 @@ public class MainActivity extends AppCompatActivity {
     private void scanComplete() {
         //check if nothing found
         if (scan_results_.isEmpty()) {
-            tv_status_.setText("scan result is empty");
             return;
         }
         //lop over the scan results and connect to them
