@@ -10,6 +10,8 @@ public class Constants {
  UUID && MAC
   */
     public final static String MAC_ADDR1 = "84:0D:8E:07:5A:CA";
+    public final static String MAC_ADDR2 = "84:0D:8E:1B:94:86";
+    public final static String MAC_ADDR3 = "84:0D:8E:13:B4:02";
 
     //Map<Mac, DeviceName>
     public final static Map<String, String> DeviceList = new HashMap<>();

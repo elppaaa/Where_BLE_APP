@@ -22,6 +22,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.SystemClock;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
@@ -68,9 +70,10 @@ public class MainActivity extends AppCompatActivity {
     private Button btnCall1, btnCall2, btnCall3;
 
     // 음성 인식 / 음성 출력 Obj
-    TextToSpeech tts;
+    private TextToSpeech tts;
     private SpeechRecognizer stt;
 
+    public static BluetoothManager ble_manager;
 
     // used to identify adding bluetooth names
 
@@ -79,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
     // flag for scanning
     private boolean is_scanning_ = false;
     // flag for connection
-    private boolean connected_ = false;
+    //private boolean connected_ = false;
     // scan results
     private Map<String, BluetoothDevice> scan_results_;
     // scan callback
@@ -90,11 +93,13 @@ public class MainActivity extends AppCompatActivity {
     //private Handler scan_handler_;
 
     //private BluetoothGatt ble_gatt_;
-    //Map<MAC, BluetoothGatt
+    //Map< MAC, BluetoothGatt >
     static Map<String, BluetoothGatt> connectedDeviceList = new HashMap<>();
 
     //Device On/Off toggle
-    static String toggle_A = "A";
+    static String toggle_1 = "A";
+    static String toggle_2 = "A";
+    static String toggle_3 = "A";
 
     Menu menu;
 
@@ -115,8 +120,6 @@ public class MainActivity extends AppCompatActivity {
                 return super.onOptionsItemSelected(item);
         }
     }
-
-
 
 
     @Override
@@ -143,20 +146,24 @@ public class MainActivity extends AppCompatActivity {
         console = findViewById(R.id.console);
 
         btnCall1 = findViewById(R.id.btnCall1);
+        btnCall2 = findViewById(R.id.btnCall2);
+        btnCall3 = findViewById(R.id.btnCall3);
 
 
         /* BLE Manager */
-        BluetoothManager ble_manager;
         ble_manager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         //set ble adapter
         ble_adapter_ = ble_manager.getAdapter();
+        ble_scanner_ = ble_adapter_.getBluetoothLeScanner();
 
         DeviceList.put(MAC_ADDR1, "봉숙");
+        DeviceList.put(MAC_ADDR2, "숙자");
+        DeviceList.put(MAC_ADDR3, "영자");
 
 
         tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
             @Override
-            public void onInit ( int i){
+            public void onInit(int i) {
                 tts.setLanguage(Locale.KOREAN);
             }
         });
@@ -169,73 +176,96 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-
+        /*
         new Thread(() -> {
-            startScan();
-        }).start();
-
-        new Thread(() -> {
+            SystemClock.sleep(3000);
             while (true) {
 
-                if (connectedDeviceList.size() < 3) {
-                    if (connectedDeviceList.size() == 0) {
-                    }
+                if (connectedDeviceList.size() < 3 && is_scanning_ == false) {
+                    SystemClock.sleep(3000);
                     startScan();
                 } else {
                     stopScan();
                 }
+
+
+
                 for (BluetoothGatt _gatt : connectedDeviceList.values()) {
-                    logview.append("\n\n혹시 여기 넘어오나요.... ㄷ ㄷ \n\n");
+                    SystemClock.sleep(1000);
                     if (ble_manager.getConnectionState(_gatt.getDevice(), BluetoothProfile.GATT) == BluetoothProfile.STATE_DISCONNECTED) {
-                        logview.append("remove : " + _gatt.getDevice().getAddress() + "\n");
                         connectedDeviceList.remove(_gatt.getDevice().getAddress());
 
                     }
                 }
 
-                SystemClock.sleep(60000);
+            SystemClock.sleep(3000);
+
             }
         }).start();
+
+         */
 
 
         btn_scan_.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //startScan();
-                logview.append("Scan버튼 누름 작동 X\n");
-                return;
-
+                startScan();
             }
         });
 
         btnCall1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                sendData(connectedDeviceList.get(MAC_ADDR1), toggle_A);
+                    sendData(connectedDeviceList.get(MAC_ADDR1), toggle_1);
 
-                if (toggle_A == "A") {
-                    toggle_A = "B";
-                } else {
-                    toggle_A = "A";
-                }
+                    if (toggle_1 == "A") {
+                        toggle_1 = "B";
+                    } else {
+                        toggle_1 = "A";
+                    }
+            }
+
+
+        });
+        btnCall2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                    sendData(connectedDeviceList.get(MAC_ADDR2), toggle_2);
+                    if (toggle_2 == "A") {
+                        toggle_2 = "B";
+                    } else {
+                        toggle_2 = "A";
+                    }
+            }
+        });
+
+        btnCall3.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                    sendData(connectedDeviceList.get(MAC_ADDR3), toggle_3);
+
+                    if (toggle_3 == "A") {
+                        toggle_3 = "B";
+                    } else {
+                        toggle_3 = "A";
+                    }
             }
         });
 
 
-    }
+        SystemClock.sleep(2000);
+        startScan();
+
+
+    }    //onCreate
 
 
     /*
     send data
      */
     private void sendData(BluetoothGatt bts, String _str) {
-        //check connection
-        if (!connected_) {
-            Toast.makeText(getApplicationContext(), "Failed to send data -> no connection", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-
+        try {
+            //check connection
 
         /*
 
@@ -257,9 +287,12 @@ public class MainActivity extends AppCompatActivity {
 
  */
 
-        BluetoothGattCharacteristic btt = bts.getService(SERVICE_UUID).getCharacteristic(RX_CHAR_UUID);
-        startStimulation(bts, btt, _str);
-
+            BluetoothGattCharacteristic btt = bts.getService(SERVICE_UUID).getCharacteristic(RX_CHAR_UUID);
+            startStimulation(bts, btt, _str);
+        } catch (RuntimeException e) {
+            toast("Not connected\n");
+            routine();
+        }
 
     }
 
@@ -280,9 +313,9 @@ public class MainActivity extends AppCompatActivity {
         boolean success = ble_gatt.writeCharacteristic(_cmd_characteristic);
         // check the result
         if (success) {
-            logview.append("success");
+            logview.append("success\n");
         } else {
-            logview.append("failed");
+            logview.append("failed\n");
         }
     }
 
@@ -336,7 +369,6 @@ public class MainActivity extends AppCompatActivity {
         /*
         일단은 scan filter 없앰
         */
-        ble_scanner_ = ble_adapter_.getBluetoothLeScanner();
         ble_scanner_.startScan(null, settings, scan_cb_);
         is_scanning_ = true;
 
@@ -348,17 +380,19 @@ public class MainActivity extends AppCompatActivity {
     Stop Scanning
      */
     private void stopScan() {
+        /*
         if (is_scanning_ && ble_adapter_ != null && ble_adapter_.isEnabled() && ble_scanner_ != null) {
             ble_scanner_.stopScan(scan_cb_);
             //scanComplete();
         }
-        ble_scanner_.stopScan(scan_cb_);
-        //reset flags
-        scan_cb_ = null;
-        is_scanning_ = false;
-        //scan_handler_ = null;
-        //update the status
-        tv_status_.setText("Scanning Stop");
+        */
+            is_scanning_ = false;
+            ble_scanner_.stopScan(scan_cb_);
+            //reset flags
+            scan_cb_ = null;
+            //scan_handler_ = null;
+            //update the status
+            tv_status_.setText("Scanning Stop");
     } //stopScan()
 
     /*
@@ -407,9 +441,12 @@ public class MainActivity extends AppCompatActivity {
     Gatt Client callback class
      */
     private class GattClientCallback extends BluetoothGattCallback {
+
+
         @Override
         public void onConnectionStateChange(BluetoothGatt _gatt, int _status, int _new_state) {
             super.onConnectionStateChange(_gatt, _status, _new_state);
+            routine();
             if (_status == BluetoothGatt.GATT_FAILURE) {
                 Toast.makeText(getApplicationContext(), "GATT_FAILURE", Toast.LENGTH_SHORT).show();
                 //disconnectGattServer();
@@ -422,7 +459,6 @@ public class MainActivity extends AppCompatActivity {
             if (_new_state == BluetoothProfile.STATE_CONNECTED) {
                 logview.append(_gatt.getDevice().getAddress() + "   연결됨 \n");
                 connectedDeviceList.put(_gatt.getDevice().getAddress(), _gatt);
-                connected_ = true;
                 Log.d(TAG, "Connected to the GATT server");
                 _gatt.discoverServices();
             } else if (_new_state == BluetoothProfile.STATE_DISCONNECTED) {
@@ -434,12 +470,14 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onReliableWriteCompleted(BluetoothGatt gatt, int status) {
             super.onReliableWriteCompleted(gatt, status);
+            routine();
             Toast.makeText(getApplicationContext(), "onReliableWirtecomplie", Toast.LENGTH_LONG).show();
         }
 
         @Override
         public void onServicesDiscovered(BluetoothGatt _gatt, int _status) {
             super.onServicesDiscovered(_gatt, _status);
+            routine();
             // check if the discovery failed
             if (_status != BluetoothGatt.GATT_SUCCESS) {
                 Log.e(TAG, "Device service discovery failed, status: " + _status);
@@ -458,6 +496,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onCharacteristicChanged(BluetoothGatt _gatt, BluetoothGattCharacteristic _characteristic) {
             super.onCharacteristicChanged(_gatt, _characteristic);
+            routine();
 
             Log.d(TAG, "characteristic changed: " + _characteristic.getUuid().toString());
             readCharacteristic(_characteristic);
@@ -466,6 +505,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onCharacteristicWrite(BluetoothGatt _gatt, BluetoothGattCharacteristic _characteristic, int _status) {
             super.onCharacteristicWrite(_gatt, _characteristic, _status);
+            routine();
             if (_status == BluetoothGatt.GATT_SUCCESS) {
                 Log.d(TAG, "Characteristic written successfully");
                 Toast.makeText(getApplicationContext(), "write success", Toast.LENGTH_SHORT).show();
@@ -478,6 +518,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
             super.onCharacteristicRead(gatt, characteristic, status);
+            routine();
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 Log.d(TAG, "Characteristic read successfully");
                 readCharacteristic(characteristic);
@@ -543,6 +584,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onScanFailed(int _error) {
+            routine();
             Toast.makeText(getApplicationContext(), "BLE Scan Failed ", Toast.LENGTH_SHORT).show();
             Log.e(TAG, "BLE scan failed with code " + _error);
         }
@@ -608,7 +650,7 @@ public class MainActivity extends AppCompatActivity {
     음성 인식 메소드 구현.
      */
     public void inputVoice(SpeechRecognizer _stt, String _inputText) {
-        try{
+        try {
             Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
             intent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, getPackageName());
             intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ko-KR");
@@ -661,11 +703,32 @@ public class MainActivity extends AppCompatActivity {
             });
 
             stt.startListening(intent);
-        }catch (Exception e) {
+        } catch (Exception e) {
             Toast.makeText(getApplicationContext(), e.toString(), Toast.LENGTH_LONG);
         }
     }       //InputVoice
 
+    public void routine() {
+        if (connectedDeviceList.size() < 3 && is_scanning_ == false) {
+            startScan();
+        } else {
+            stopScan();
+        }
 
+
+        for (BluetoothGatt _gatt : connectedDeviceList.values()) {
+            if (ble_manager.getConnectionState(_gatt.getDevice(), BluetoothProfile.GATT) == BluetoothProfile.STATE_DISCONNECTED) {
+                logview.append("disconnect : " + _gatt.getDevice().getAddress()+ "\n");
+                connectedDeviceList.remove(_gatt.getDevice().getAddress());
+
+            }
+        }
+    }
+
+
+    private void toast(String _str) {
+        Toast t = Toast.makeText(getApplicationContext(), _str, Toast.LENGTH_SHORT);
+        t.show();
+    }
 
 }
