@@ -20,6 +20,7 @@ import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -46,6 +47,8 @@ import java.util.Locale;
 import java.util.Map;
 
 import android.widget.Toast;
+
+import org.w3c.dom.Text;
 
 import static kr.ac.bttest05.Constants.*;
 
@@ -85,6 +88,10 @@ public class MainActivity extends AppCompatActivity {
     //Map< MAC, BluetoothGatt >
     static Map<String, BluetoothGatt> connectedDeviceList = new HashMap<>();
 
+    SharedPreferences pref;
+    SharedPreferences.Editor edit;
+
+
     //Device On/Off toggle
     static String toggle_1 = "A";
     static String toggle_2 = "A";
@@ -121,6 +128,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        pref = getApplicationContext().getSharedPreferences("DevList", MODE_PRIVATE);
+        edit = pref.edit();
+
 
         //// get instances of gui objects
 
@@ -143,9 +153,7 @@ public class MainActivity extends AppCompatActivity {
         ble_adapter_ = ble_manager.getAdapter();
         ble_scanner_ = ble_adapter_.getBluetoothLeScanner();
 
-        DeviceList.put("봉숙", MAC_ADDR1);
-        DeviceList.put("숙자", MAC_ADDR2);
-        DeviceList.put("영자", MAC_ADDR3);
+
 
 
         tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
@@ -166,8 +174,8 @@ public class MainActivity extends AppCompatActivity {
         btnVoice.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(is_calling_) {
-                    for(BluetoothGatt _dev :connectedDeviceList.values()){
+                if (is_calling_) {
+                    for (BluetoothGatt _dev : connectedDeviceList.values()) {
                         sendData(_dev, "B");
                         is_calling_ = false;
                     }
@@ -177,7 +185,6 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-
 
 
         btn_scan_.setOnClickListener(new View.OnClickListener() {
@@ -536,7 +543,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onScanResult(int _callback_type, ScanResult _result) {
-            if (DeviceList.containsValue(_result.getDevice().getAddress())) {
+            if (pref.contains(_result.getDevice().getAddress())) {
                 addScanResult(_result);
             }
 
@@ -545,7 +552,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onBatchScanResults(List<ScanResult> _results) {
             for (ScanResult result : _results) {
-                if (DeviceList.containsValue(result.getDevice().getAddress())) {
+                if (pref.contains(result.getDevice().getAddress())) {
                     addScanResult(result);
                 }
             }
@@ -662,7 +669,7 @@ public class MainActivity extends AppCompatActivity {
                     // 결과를 siri메소드로 보냄
                     String _t = ((ArrayList<String>) results.get(SpeechRecognizer.RESULTS_RECOGNITION)).get(0);
                     siri(_t);
-                    logview.append("User : " +_t+ "\n");
+                    logview.append("User : " + _t + "\n");
                 }
 
                 @Override
@@ -705,6 +712,59 @@ public class MainActivity extends AppCompatActivity {
         t.show();
     }
 
+
+    /*
+    Sharedpreference를 맵 타입으로 티런해서 사용하면 됨.
+     */
+    private void siri(String _vtt) {
+        try {
+            Map<String, ?> map = pref.getAll();
+            for(Map.Entry<String, ?> entry : map.entrySet()){
+                if(!entry.getValue().toString().isEmpty() && _vtt.contains(entry.getValue().toString())){
+                    if(connectedDeviceList.containsKey(entry.getKey())){
+                        logview.append(entry.getValue() + " 호출\n");
+                        tts.speak("Where에서 " + entry.getValue() + "를 찾겠습니다.", TextToSpeech.QUEUE_FLUSH, null);
+                        is_calling_ = true;
+                        sendData(connectedDeviceList.get(entry.getKey()), "A");
+                        return;
+                    } else{
+                        tts.speak("현재 기기가 연결되어있지 않습니다.", TextToSpeech.QUEUE_FLUSH, null);
+                        logview.append("현재 기기가 연결되어있지 않습니다.");
+                        return;
+                    }
+                }
+            }
+            tts.speak("등록된 기기가 맞는지 확인해주세요.", TextToSpeech.QUEUE_FLUSH, null);
+            logview.append("등록된 기기가 맞는지 확인해주세요.\n");
+
+            /*
+            for (Map.Entry<String, ?> entry : map.entrySet()) {
+                if (_vtt.contains(entry.getValue().toString()) && !entry.getValue().toString().isEmpty() && connectedDeviceList.containsKey(entry.getKey())) {
+                    logview.append(entry.getValue() + " 호출\n");
+                    tts.speak("Where에서 " + entry.getValue() + "를 찾겠습니다.", TextToSpeech.QUEUE_FLUSH, null);
+                    is_calling_ = true;
+                    sendData(connectedDeviceList.get(entry.getKey()), "A");
+                    return;
+                } else if(_vtt.contains(entry.getValue().toString()) && !entry.getValue().toString().isEmpty() && !connectedDeviceList.containsKey(entry.getKey())){
+                    tts.speak("현재 기기가 연결되어있지 않습니다.", TextToSpeech.QUEUE_FLUSH, null);
+                    logview.append("현재 기기가 연결되어있지 않습니다.");
+
+                } else{
+                    tts.speak("등록된 기기가 맞는지 확인해주세요.", TextToSpeech.QUEUE_FLUSH, null);
+                    logview.append("등록된 기기가 맞는지 확인해주세요.\n");
+                }
+            }
+
+             */
+
+
+        } catch (Exception e) {
+            logview.append(e.toString() + "\n");
+            toast(e.toString());
+        }
+    }
+
+/*
     private void siri(String _vtt) {
         try {
             for (Map.Entry<String, String> map : DeviceList.entrySet()) {
@@ -720,6 +780,8 @@ public class MainActivity extends AppCompatActivity {
             toast(e.toString());
         }
     }
+
+     */
 
 
 }
