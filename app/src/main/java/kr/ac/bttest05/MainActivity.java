@@ -196,6 +196,7 @@ public class MainActivity extends AppCompatActivity {
                         for (BluetoothGatt _dev : connectedDeviceList.values()) {
                             sendData(_dev, "B");
                             is_calling_ = false;
+                            btnVoice.setImageResource(R.drawable.voice);
                         }
                     } else {
                         tts.speak("음성 버튼", TextToSpeech.QUEUE_FLUSH, null);
@@ -213,6 +214,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public boolean onTouch(View v, MotionEvent event) {
+                startScan();
                 gD.onTouchEvent(event);
                 return false;
             }
@@ -269,7 +271,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
-        SystemClock.sleep(1000);
+        SystemClock.sleep(300);
         startScan();
 
 
@@ -340,6 +342,9 @@ public class MainActivity extends AppCompatActivity {
     Start BLE Scan
      */
     private void startScan() {
+        if(is_scanning_) {
+            return;
+        }
         //check ble adapter and ble enabled
         if (ble_adapter_ == null || !ble_adapter_.isEnabled()) {
             requestEnableBLE(); //BLE 실행 메소드
@@ -671,6 +676,7 @@ public class MainActivity extends AppCompatActivity {
                 public void onReadyForSpeech(Bundle params) {
                     //음성 입력 시작.
                     toast("음성 인식 중");
+                    btnVoice.setImageResource(R.drawable.onvoice);
                 }
 
                 @Override
@@ -696,6 +702,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onError(int error) {
                     //오류 발생
+                    btnVoice.setImageResource(R.drawable.onvoice);
                 }
 
                 @Override
@@ -725,9 +732,9 @@ public class MainActivity extends AppCompatActivity {
     }       //InputVoice
 
     public void routine() {
-        if (connectedDeviceList.size() < 3 && is_scanning_ == false) {
+        if (connectedDeviceList.size() < 3 && !is_scanning_) {
             startScan();
-        } else {
+        } else if(connectedDeviceList.size() >= 3){
             stopScan();
         }
 
@@ -773,12 +780,15 @@ public class MainActivity extends AppCompatActivity {
                     } else {
                         tts.speak("현재 기기가 연결되어있지 않습니다.", TextToSpeech.QUEUE_FLUSH, null);
                         logview.append("현재 기기가 연결되어있지 않습니다.");
+                        btnVoice.setBackgroundResource(R.drawable.voice);
                         return;
                     }
                 }
             }
+            btnVoice.setImageResource(R.drawable.voice);
             tts.speak("등록된 기기가 맞는지 확인해주세요.", TextToSpeech.QUEUE_FLUSH, null);
             logview.append("등록된 기기가 맞는지 확인해주세요.\n");
+
 
             /*
             for (Map.Entry<String, ?> entry : map.entrySet()) {
