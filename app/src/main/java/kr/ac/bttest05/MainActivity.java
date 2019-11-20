@@ -32,8 +32,10 @@ import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -154,8 +156,6 @@ public class MainActivity extends AppCompatActivity {
         ble_scanner_ = ble_adapter_.getBluetoothLeScanner();
 
 
-
-
         tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
             @Override
             public void onInit(int i) {
@@ -170,7 +170,7 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(getApplicationContext(), "권한을 수락해주세요", Toast.LENGTH_LONG);
         }
 
-
+/*
         btnVoice.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -186,13 +186,48 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+ */
 
+        btnVoice.setOnTouchListener(new View.OnTouchListener() {
+            GestureDetector gD = new GestureDetector(new GestureDetector.SimpleOnGestureListener() {
+                @Override
+                public boolean onSingleTapConfirmed(MotionEvent e) {
+                    if (is_calling_) {
+                        for (BluetoothGatt _dev : connectedDeviceList.values()) {
+                            sendData(_dev, "B");
+                            is_calling_ = false;
+                        }
+                    } else {
+                        tts.speak("음성 버튼", TextToSpeech.QUEUE_FLUSH, null);
+                    }
+                    return true;
+                }
+
+                @Override
+                public boolean onDoubleTap(MotionEvent e) {
+                    inputVoice();
+                    return true;
+                }
+            });
+
+
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                gD.onTouchEvent(event);
+                return false;
+            }
+        });
+
+/*
         btn_scan_.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 startScan();
             }
         });
+       */
+
+
 
         btnCall1.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -717,17 +752,25 @@ public class MainActivity extends AppCompatActivity {
     Sharedpreference를 맵 타입으로 티런해서 사용하면 됨.
      */
     private void siri(String _vtt) {
+        for (BluetoothGatt _gatt : connectedDeviceList.values()) {
+            if (ble_manager.getConnectionState(_gatt.getDevice(), BluetoothProfile.GATT) == BluetoothProfile.STATE_DISCONNECTED) {
+                logview.append("disconnect : " + _gatt.getDevice().getAddress() + "\n");
+                connectedDeviceList.remove(_gatt.getDevice().getAddress());
+
+            }
+        }
+
         try {
             Map<String, ?> map = pref.getAll();
-            for(Map.Entry<String, ?> entry : map.entrySet()){
-                if(!entry.getValue().toString().isEmpty() && _vtt.contains(entry.getValue().toString())){
-                    if(connectedDeviceList.containsKey(entry.getKey())){
+            for (Map.Entry<String, ?> entry : map.entrySet()) {
+                if (!entry.getValue().toString().isEmpty() && _vtt.contains(entry.getValue().toString())) {
+                    if (connectedDeviceList.containsKey(entry.getKey())) {
                         logview.append(entry.getValue() + " 호출\n");
                         tts.speak("Where에서 " + entry.getValue() + "를 찾겠습니다.", TextToSpeech.QUEUE_FLUSH, null);
                         is_calling_ = true;
                         sendData(connectedDeviceList.get(entry.getKey()), "A");
                         return;
-                    } else{
+                    } else {
                         tts.speak("현재 기기가 연결되어있지 않습니다.", TextToSpeech.QUEUE_FLUSH, null);
                         logview.append("현재 기기가 연결되어있지 않습니다.");
                         return;

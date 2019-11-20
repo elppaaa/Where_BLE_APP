@@ -3,6 +3,10 @@ package kr.ac.bttest05;
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.SystemClock;
+import android.speech.tts.TextToSpeech;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -14,7 +18,7 @@ import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.Locale;
 
 
 public class DeviceSetting extends Activity {
@@ -22,6 +26,7 @@ public class DeviceSetting extends Activity {
     private Button btnSave;
     private SharedPreferences pref;
     private SharedPreferences.Editor edit;
+    private TextToSpeech tts;
 
 
     /*
@@ -35,6 +40,14 @@ public class DeviceSetting extends Activity {
         Text2 = findViewById(R.id.setting_Text2);
         Text3 = findViewById(R.id.setting_Text3);
         btnSave = findViewById(R.id.setting_btnSave);
+        tts = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int i) {
+                tts.setLanguage(Locale.KOREAN);
+            }
+        });
+        tts.speak("설정 화면입니다.", TextToSpeech.QUEUE_FLUSH, null);
+
 
         pref = getApplicationContext().getSharedPreferences("DevList", MODE_PRIVATE);
         edit = pref.edit();
@@ -56,15 +69,56 @@ public class DeviceSetting extends Activity {
 
 
         //버튼 클릭했을 때 장비이름 쓰기 수행
-        btnSave.setOnClickListener(new View.OnClickListener() {
+        btnSave.setOnTouchListener(new View.OnTouchListener() {
+            GestureDetector gd = new GestureDetector(new GestureDetector.SimpleOnGestureListener() {
+                @Override
+                public boolean onDoubleTapEvent(MotionEvent e) {
+                    saveName();
+                    tts.speak("저장되었습니다.", TextToSpeech.QUEUE_FLUSH, null);
+                    finish();
+                    return true;
+                }
+
+                @Override
+                public boolean onSingleTapConfirmed(MotionEvent e) {
+                    tts.speak("저장 버튼", TextToSpeech.QUEUE_FLUSH, null);
+                    return true;
+                }
+
+            });
+
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                gd.onTouchEvent(event);
+                return true;
+            }
+        });
+
+
+
+
+        Text1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                saveName();
+                tts.speak(Text1.getText().toString(), TextToSpeech.QUEUE_FLUSH, null);
+            }
+        });
+
+
+        Text2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                tts.speak(Text2.getText().toString(), TextToSpeech.QUEUE_FLUSH, null);
+            }
+        });
+        Text3.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                tts.speak(Text3.getText().toString(), TextToSpeech.QUEUE_FLUSH, null);
             }
         });
 
     }
-
 
 
     void saveName() {
